@@ -21,7 +21,14 @@ requirements:
     - ${{ stdlib("c") }}
     - ${{ compiler('c') }}
     - ${{ compiler('cxx') }}
-    - if: unix
+    # linux, NOT unix: `cdt()` resolves to a CentOS sysroot package
+    # (mesa-libgl-devel-cos6-<arch>), and those are published for Linux
+    # architectures only. `mesa-libgl-devel-cos6-x86_64` happens to exist, so
+    # under `unix` the osx-64 build quietly installed a Linux sysroot package it
+    # never used and passed anyway; osx-arm64 asks for
+    # `mesa-libgl-devel-cos6-arm64`, which does not exist, and the solve fails.
+    # macOS gets OpenGL from the system framework and needs no CDT either way.
+    - if: linux
       then: ${{ cdt('mesa-libGL-devel') }}
     - cmake
     - ninja
