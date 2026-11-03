@@ -18,7 +18,10 @@ source:
 
 build:
   number: 1
-  skip: match(python, "<3.10")
+  skip:
+    - match(python, "<3.10")
+    # osx-64 is near end of life and its CI is flaky; macOS ships for osx-arm64 only.
+    - target_platform == "osx-64"
 
 requirements:
   build:
@@ -98,13 +101,7 @@ tests:
       run:
         - pytest
     script:
-      # conda-forge's ifcopenshell 0.9.0 osx-64 build segfaults in its own OpenCASCADE kernel on a
-      # plain IfcFacetedBrep box (ifcopenshell.geom.create_shape, no adacpp involved; 0.8.5 and
-      # osx-arm64 are fine). adacpp's `occ` taxonomy pipeline drives that kernel and gets nothing
-      # back, so deselect that one case there until a fixed ifcopenshell build lands.
-      - if: target_platform == "osx-64" and ifcopenshell == "0.9.0"
-        then: pytest tests -k "not (test_blob_tessellates_through_every_pipeline and occ)"
-        else: pytest tests
+      - pytest tests
   - script:
       # The renderer module must import without a GPU (the adapter is only requested on construction).
       - python -c "from adacpp import _render; print(_render.OffscreenRenderer)"
