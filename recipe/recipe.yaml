@@ -13,7 +13,7 @@ source:
     sha256: 335104144407b50c3fd5394adfb2a15b950feea2cbe8d96cb217ac590685f1cf
 
 build:
-  number: 0
+  number: 1
   skip: match(python, "<3.10")
 
 requirements:
@@ -66,12 +66,22 @@ requirements:
     - cli11
     - tinygltf
     - gmsh
+    # adacpp._render, the headless WebGPU renderer (src/render). wgpu-native's run_exports add it as a
+    # run dependency; webgpu-headers carries webgpu.h.
+    - wgpu-native >=29,<30
+    - webgpu-headers
     - pip
     - setuptools
     - wheel
   run:
     - python
     - ${{ pin_compatible('gmsh', upper_bound='x.x') }}
+  # Windows: wgpu_native.lib is the static library, so _render carries wgpu itself and needs no
+  # wgpu-native at run time (see src/render/CMakeLists.txt).
+  ignore_run_exports:
+    by_name:
+      - if: win
+        then: wgpu-native
   run_exports:
     - ${{ pin_subpackage(name, upper_bound='x.x.x') }}
 
@@ -91,6 +101,9 @@ tests:
       - if: target_platform == "osx-64" and ifcopenshell == "0.9.0"
         then: pytest tests -k "not (test_blob_tessellates_through_every_pipeline and occ)"
         else: pytest tests
+  - script:
+      # The renderer module must import without a GPU (the adapter is only requested on construction).
+      - python -c "from adacpp import _render; print(_render.OffscreenRenderer)"
 
 about:
   license: GPL-3.0-or-later
