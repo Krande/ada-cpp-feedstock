@@ -11,6 +11,10 @@ package:
 source:
   - url: https://github.com/Krande/adacpp/archive/refs/tags/v${{ version }}.tar.gz
     sha256: 335104144407b50c3fd5394adfb2a15b950feea2cbe8d96cb217ac590685f1cf
+    patches:
+      # src/render asks find_package(Python 3.12) although nothing in it needs 3.12, which fails
+      # the python 3.11 builds; lower it to adacpp's requires-python floor.
+      - render-python-3.10.patch
 
 build:
   number: 1
